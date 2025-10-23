@@ -1,0 +1,6 @@
+[submodule "frontend"]
+	path = frontend
+	url = https://github.com/imAllwinGeorge/GlobalExplorer-client.git
+[submodule "backend"]
+	path = backend
+	url = https://github.com/imAllwinGeorge/GlobalExplorer-api.git
