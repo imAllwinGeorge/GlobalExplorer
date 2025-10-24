@@ -1,0 +1,51 @@
+services:
+  backend:
+    build: ./backend
+    container_name: backend
+    env_file:
+      - ./backend/.env
+    ports:
+      - "3000:3000"
+    depends_on:
+      - myredis
+    networks:
+      - globalexplorer-network
+
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    # env_file:
+    #   - ./frontend/.env
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - globalexplorer-network
+
+  # nginx:
+  #   image: nginx:latest
+  #   container_name: nginx
+  #   ports:
+  #     - "80:80"
+  #   volumes:
+  #     - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+  #     # Use built frontend files from container
+  #     - ./frontend/dist:/usr/share/nginx/html:ro
+  #   depends_on:
+  #     - backend
+  #     - frontend
+  #   networks:
+  #     - globalexplorer-network
+
+  myredis:
+    image: redis:7
+    container_name: myredis
+    ports:
+      - "6379:6379"
+    networks:
+      - globalexplorer-network
+
+networks:
+  globalexplorer-network:
+    driver: bridge
