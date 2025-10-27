@@ -78,8 +78,12 @@ jobs:
           EOF
 
       # 6️⃣ Build Docker images
-      - name: Build Docker images
-        run: docker compose -f docker-compose.prod.yml --env-file .env.build build
+      - name: Build backend
+        run: docker build -f backend/Dockerfile -t your-backend-image:latest ./backend
+
+      - name: Build frontend
+        run: docker build -f frontend/Dockerfile -t your-frontend-image:latest ./frontend
+
 
       # 7️⃣ Tag & push to ACR
       - name: Push Docker images to ACR
