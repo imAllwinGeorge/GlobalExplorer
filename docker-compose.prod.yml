@@ -7,23 +7,25 @@ services:
   backend:
     build:
       context: ./backend
-      dockerfile: ./backend/Dockerfile
+      dockerfile: Dockerfile
     container_name: backend
     env_file:
-      - .env.build
+      - ./backend/.env
     depends_on:
       - redis
     environment:
       - REDIS_HOST=redis
+    restart: always
     ports:
       - "3000:3000"
 
   frontend:
     build:
       context: ./frontend
-      dockerfile: ./frontend/Dockerfile
+      dockerfile: Dockerfile
     container_name: frontend
     depends_on:
       - backend
+    restart: always
     ports:
       - "80:80"

@@ -10,30 +10,31 @@ env:
   ENV_NAME: ${{ secrets.CONTAINERAPPS_ENV }}
   LOCATION: ${{ secrets.LOCATION }}
   ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
-  ACR_NAME: ${{ secrets.ACR_USERNAME}} # short name of your registry (no .azurecr.io)
+  ACR_NAME: ${{ secrets.ACR_USERNAME }}
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣ Checkout repo
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # 1️⃣ Login to Azure
+      # 2️⃣ Log in to Azure
       - name: Log in to Azure
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      # 2️⃣ Login to ACR
+      # 3️⃣ Log in to ACR
       - name: Log in to ACR
         run: az acr login --name $ACR_NAME
 
-      # 3️⃣ Generate safe frontend build env file
-      - name: Generate frontend .env.build file
+      # 4️⃣ Generate frontend build env
+      - name: Generate frontend .env.build
         run: |
           cat <<EOF > .env.build
           VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }}
@@ -41,18 +42,47 @@ jobs:
           VITE_MAP_API=${{ secrets.VITE_MAP_API }}
           VITE_IMG_URL=${{ secrets.VITE_IMG_URL }}
           VITE_RAZORPAY_KEY_ID=${{ secrets.VITE_RAZORPAY_KEY_ID }}
-          VITE_RAZORPAY_KEY_SECRET=${{ secrets.VITE_RAZORPAY_KEY_SECRET }}
           VITE_GET_GEOLOCATION=${{ secrets.VITE_GET_GEOLOCATION }}
           EOF
 
-      # 4️⃣ Build Docker images
-      - name: Build Docker images
-        working-directory: ${{ github.workspace }}
+      # 5️⃣ Create backend/.env file with all secrets
+      - name: Create backend .env file
         run: |
-          docker compose -f docker-compose.prod.yml --env-file .env.build build
+          mkdir -p backend
+          cat <<EOF > backend/.env
+          ALLOWED_ORIGIN=${{ secrets.ALLOWED_ORIGIN }}
+          FRONT_END_URL=${{ secrets.FRONT_END_URL }}
+          NODE_ENV=${{ secrets.NODE_ENV }}
+          MONGODB_URI=${{ secrets.MONGODB_URI }}
+          SESSION_SECRET=${{ secrets.SESSION_SECRET }}
+          GMAIL_PASSWORD=${{ secrets.GMAIL_PASSWORD }}
+          GMAIL_ID=${{ secrets.GMAIL_ID }}
+          ACCESS_TOKEN_SECRET=${{ secrets.ACCESS_TOKEN_SECRET }}
+          REFRESH_TOKEN_SECRET=${{ secrets.REFRESH_TOKEN_SECRET }}
+          RESET_TOKEN_SECRET=${{ secrets.RESET_TOKEN_SECRET }}
+          GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GOOGLE_CALLBACK_URL=${{ secrets.GOOGLE_CALLBACK_URL }}
+          REDIS_USERNAME=${{ secrets.REDIS_USERNAME }}
+          REDIS_PASS=${{ secrets.REDIS_PASS }}
+          REDIS_HOST=redis
+          REDIS_PORT=${{ secrets.REDIS_PORT }}
+          REDIS_URL=${{ secrets.REDIS_URL }}
+          RAZORPAY_KEY_ID=${{ secrets.RAZORPAY_KEY_ID }}
+          RAZORPAY_KEY_SECRET=${{ secrets.RAZORPAY_KEY_SECRET }}
+          RAZORPAY_KEY=${{ secrets.RAZORPAY_KEY }}
+          CLOUDINARY_URL=${{ secrets.CLOUDINARY_URL }}
+          CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY }}
+          CLOUDINARY_SECRET=${{ secrets.CLOUDINARY_SECRET }}
+          CLOUDINARY_CLOUD_NAME=${{ secrets.CLOUDINARY_CLOUD_NAME }}
+          EOF
 
-      # 5️⃣ Tag and Push images manually
-      - name: Tag and push Docker images to ACR
+      # 6️⃣ Build Docker images
+      - name: Build Docker images
+        run: docker compose -f docker-compose.prod.yml --env-file .env.build build
+
+      # 7️⃣ Tag & push to ACR
+      - name: Push Docker images to ACR
         run: |
           docker tag backend:latest $ACR_LOGIN_SERVER/backend:latest
           docker tag frontend:latest $ACR_LOGIN_SERVER/frontend:latest
@@ -60,8 +90,8 @@ jobs:
           docker push $ACR_LOGIN_SERVER/backend:latest
           docker push $ACR_LOGIN_SERVER/frontend:latest
 
-      # 6️⃣ Deploy using Container Apps Compose
-      - name: Deploy to Azure Container Apps
+      # 8️⃣ Deploy to Azure Container Apps
+      - name: Deploy using Azure Container Apps Compose
         run: |
           az containerapp compose create \
             --resource-group $RESOURCE_GROUP \
