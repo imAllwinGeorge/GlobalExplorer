@@ -10,14 +10,14 @@ env:
   ENV_NAME: ${{ secrets.CONTAINERAPPS_ENV }}
   LOCATION: ${{ secrets.LOCATION }}
   ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
-  ACR_NAME: ${{ secrets.ACR_USERNAME }}
+  ACR_NAME: ${{ secrets.ACR_NAME }}
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout repo
+      # 1️⃣ Checkout the repository
       - name: Checkout code
         uses: actions/checkout@v4
         with:
@@ -29,13 +29,14 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      # 3️⃣ Log in to ACR
+      # 3️⃣ Log in to Azure Container Registry (ACR)
       - name: Log in to ACR
         run: az acr login --name $ACR_NAME
 
-      # 4️⃣ Generate frontend build env
+      # 4️⃣ Generate frontend .env.build file from secrets
       - name: Generate frontend .env.build
         run: |
+          echo "Generating frontend .env.build..."
           cat <<EOF > .env.build
           VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }}
           VITE_BASE_URL=${{ secrets.VITE_BASE_URL }}
@@ -45,9 +46,10 @@ jobs:
           VITE_GET_GEOLOCATION=${{ secrets.VITE_GET_GEOLOCATION }}
           EOF
 
-      # 5️⃣ Create backend/.env file with all secrets
+      # 5️⃣ Create backend/.env with all sensitive backend secrets
       - name: Create backend .env file
         run: |
+          echo "Creating backend/.env..."
           mkdir -p backend
           cat <<EOF > backend/.env
           ALLOWED_ORIGIN=${{ secrets.ALLOWED_ORIGIN }}
@@ -78,25 +80,30 @@ jobs:
           EOF
 
       # 6️⃣ Build Docker images
-      - name: Build backend
-        run: docker build -f backend/Dockerfile -t your-backend-image:latest ./backend
-
-      - name: Build frontend
-        run: docker build -f frontend/Dockerfile -t your-frontend-image:latest ./frontend
-
-
-      # 7️⃣ Tag & push to ACR
-      - name: Push Docker images to ACR
+      - name: Build backend image
         run: |
+          echo "Building backend Docker image..."
+          docker build -f backend/Dockerfile -t backend:latest ./backend
+
+      - name: Build frontend image
+        run: |
+          echo "Building frontend Docker image..."
+          docker build -f frontend/Dockerfile -t frontend:latest ./frontend
+
+      # 7️⃣ Tag & Push to ACR
+      - name: Push images to ACR
+        run: |
+          echo "Tagging & pushing images to ACR..."
           docker tag backend:latest $ACR_LOGIN_SERVER/backend:latest
           docker tag frontend:latest $ACR_LOGIN_SERVER/frontend:latest
 
           docker push $ACR_LOGIN_SERVER/backend:latest
           docker push $ACR_LOGIN_SERVER/frontend:latest
 
-      # 8️⃣ Deploy to Azure Container Apps
-      - name: Deploy using Azure Container Apps Compose
+      # 8️⃣ Deploy using Azure Container Apps Compose
+      - name: Deploy to Azure Container Apps
         run: |
+          echo "Deploying to Azure Container Apps..."
           az containerapp compose create \
             --resource-group $RESOURCE_GROUP \
             --environment $ENV_NAME \
