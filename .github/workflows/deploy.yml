@@ -1,0 +1,55 @@
+name: Deploy to Azure Container Apps (Compose)
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  RESOURCE_GROUP: ${{ secrets.AZ_RESOURCE_GROUP }}
+  ENV_NAME: ${{ secrets.CONTAINERAPPS_ENV }}
+  LOCATION: ${{ secrets.LOCATION }}
+  ACR: ${{ secrets.ACR_LOGIN_SERVER }}
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Log in to ACR
+        run: az acr login --name ${{ secrets.ACR }}
+
+      - name: Generate frontend .env.build file
+        run: |
+          cat <<EOF > .env.build
+          VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }}
+          VITE_BASE_URL=${{ secrets.VITE_BASE_URL }}
+          VITE_MAP_API=${{ secrets.VITE_MAP_API }}
+          VITE_IMG_URL=${{ secrets.VITE_IMG_URL }}
+          VITE_RAZORPAY_KEY_ID=${{ secrets.VITE_RAZORPAY_KEY_ID }}
+          VITE_RAZORPAY_KEY_SECRET=${{ secrets.VITE_RAZORPAY_KEY_SECRET }}
+          VITE_GET_GEOLOCATION=${{ secrets.VITE_GET_GEOLOCATION }}
+          EOF
+
+      - name: Build and push Docker images
+        run: |
+          docker compose -f docker-compose.prod.yml --env-file .env.build build
+          docker compose -f docker-compose.prod.yml push
+
+      - name: Deploy using Container Apps Compose
+        run: |
+          az containerapp compose create \
+            --resource-group $RESOURCE_GROUP \
+            --environment $ENV_NAME \
+            --compose-file-path docker-compose.prod.yml \
+            --registry-server ${{ secrets.ACR }} \
+            --registry-username ${{ secrets.ACR_USERNAME }} \
+            --registry-password ${{ secrets.ACR_PASSWORD }}
