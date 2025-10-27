@@ -103,7 +103,7 @@ jobs:
           az containerapp compose create \
             --resource-group $RESOURCE_GROUP \
             --environment $ENV_NAME \
-            --compose-file-path docker-compose.prod.yml \
+            --compose-file-path docker-compose.deploy.yml \
             --registry-server $ACR_LOGIN_SERVER \
             --registry-username ${{ secrets.ACR_USERNAME }} \
             --registry-password ${{ secrets.ACR_PASSWORD }} \

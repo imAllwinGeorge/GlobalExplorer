@@ -1,3 +1,4 @@
+# docker-compose.deploy.yml
 services:
   redis:
     image: redis:latest
@@ -5,13 +6,10 @@ services:
     restart: always
 
   backend:
-    image: globalexplorer-backend:latest
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: globalexplorer-backend:latest  # <-- Specifies the image to pull
+    # NO 'build:' SECTION
     container_name: backend
-    env_file:
-      - ./backend/.env
+    # 'env_file' is removed as Azure will not read it.
     depends_on:
       - redis
     environment:
@@ -21,10 +19,8 @@ services:
       - "3000:3000"
 
   frontend:
-    image: globalexplorer-frontend:latest
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
+    image: globalexplorer-frontend:latest # <-- Specifies the image to pull
+    # NO 'build:' SECTION
     container_name: frontend
     depends_on:
       - backend
