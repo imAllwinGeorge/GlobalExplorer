@@ -9,7 +9,8 @@ env:
   RESOURCE_GROUP: ${{ secrets.AZ_RESOURCE_GROUP }}
   ENV_NAME: ${{ secrets.CONTAINERAPPS_ENV }}
   LOCATION: ${{ secrets.LOCATION }}
-  ACR: ${{ secrets.ACR_LOGIN_SERVER }}
+  ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
+  ACR_NAME: ${{ secrets.ACR_USERNAME}} # short name of your registry (no .azurecr.io)
 
 jobs:
   build-and-deploy:
@@ -18,15 +19,20 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
+      # 1️⃣ Login to Azure
       - name: Log in to Azure
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      # 2️⃣ Login to ACR
       - name: Log in to ACR
-        run: az acr login --name ${{ secrets.ACR_USERNAME }}
+        run: az acr login --name $ACR_NAME
 
+      # 3️⃣ Generate safe frontend build env file
       - name: Generate frontend .env.build file
         run: |
           cat <<EOF > .env.build
@@ -39,17 +45,28 @@ jobs:
           VITE_GET_GEOLOCATION=${{ secrets.VITE_GET_GEOLOCATION }}
           EOF
 
-      - name: Build and push Docker images
+      # 4️⃣ Build Docker images
+      - name: Build Docker images
+        working-directory: ${{ github.workspace }}
         run: |
           docker compose -f docker-compose.prod.yml --env-file .env.build build
-          docker compose -f docker-compose.prod.yml push
 
-      - name: Deploy using Container Apps Compose
+      # 5️⃣ Tag and Push images manually
+      - name: Tag and push Docker images to ACR
+        run: |
+          docker tag backend:latest $ACR_LOGIN_SERVER/backend:latest
+          docker tag frontend:latest $ACR_LOGIN_SERVER/frontend:latest
+
+          docker push $ACR_LOGIN_SERVER/backend:latest
+          docker push $ACR_LOGIN_SERVER/frontend:latest
+
+      # 6️⃣ Deploy using Container Apps Compose
+      - name: Deploy to Azure Container Apps
         run: |
           az containerapp compose create \
             --resource-group $RESOURCE_GROUP \
             --environment $ENV_NAME \
             --compose-file-path docker-compose.prod.yml \
-            --registry-server ${{ secrets.ACR_LOGIN_SERVER }} \
+            --registry-server $ACR_LOGIN_SERVER \
             --registry-username ${{ secrets.ACR_USERNAME }} \
             --registry-password ${{ secrets.ACR_PASSWORD }}
