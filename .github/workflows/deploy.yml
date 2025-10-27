@@ -20,6 +20,8 @@ jobs:
       # 1️⃣ Checkout the repository
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
 
       # 2️⃣ Log in to Azure
       - name: Log in to Azure
