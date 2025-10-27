@@ -10,7 +10,7 @@ env:
   ENV_NAME: ${{ secrets.CONTAINERAPPS_ENV }}
   LOCATION: ${{ secrets.LOCATION }}
   ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
-  ACR_NAME: ${{ secrets.ACR_NAME }}
+  ACR_NAME: ${{ secrets.ACR_USERNAME }}
 
 jobs:
   build-and-deploy:
