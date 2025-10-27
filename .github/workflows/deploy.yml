@@ -6,7 +6,7 @@ on:
       - main
 
 env:
-  RESOURCE_GROUP: ${{ secrets.AZ_RESOURCE_GROUP }}
+  RESOURCE_GROUP: ${{ secrets.ACR_RESOURCE_GROUP }}
   ENV_NAME: ${{ secrets.CONTAINERAPPS_ENV }}
   LOCATION: ${{ secrets.LOCATION }}
   ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
