@@ -20,8 +20,6 @@ jobs:
       # 1️⃣ Checkout the repository
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       # 2️⃣ Log in to Azure
       - name: Log in to Azure
@@ -33,7 +31,7 @@ jobs:
       - name: Log in to ACR
         run: az acr login --name $ACR_NAME
 
-      # 4️⃣ Generate frontend .env.build file from secrets
+      # 4️⃣ Generate frontend .env.build
       - name: Generate frontend .env.build
         run: |
           echo "Generating frontend .env.build..."
@@ -79,28 +77,24 @@ jobs:
           CLOUDINARY_CLOUD_NAME=${{ secrets.CLOUDINARY_CLOUD_NAME }}
           EOF
 
-      # 6️⃣ Build Docker images
-      - name: Build backend image
+      # 6️⃣ Build and tag images using docker compose
+      - name: Build Docker images using Compose
         run: |
-          echo "Building backend Docker image..."
-          docker build -f backend/Dockerfile -t backend:latest ./backend
-
-      - name: Build frontend image
-        run: |
-          echo "Building frontend Docker image..."
-          docker build -f frontend/Dockerfile -t frontend:latest ./frontend
+          echo "Building Docker images using docker-compose.prod.yml..."
+          docker compose -f docker-compose.prod.yml --env-file .env.build build
 
       # 7️⃣ Tag & Push to ACR
-      - name: Push images to ACR
+        # after building, tag & push images to your ACR
+      - name: Tag and Push images to ACR
         run: |
-          echo "Tagging & pushing images to ACR..."
-          docker tag backend:latest $ACR_LOGIN_SERVER/backend:latest
-          docker tag frontend:latest $ACR_LOGIN_SERVER/frontend:latest
+          echo "Tagging and pushing images to ACR..."
+          docker tag globalexplorer-backend:latest $ACR_LOGIN_SERVER/globalexplorer-backend:latest
+          docker tag globalexplorer-frontend:latest $ACR_LOGIN_SERVER/globalexplorer-frontend:latest
 
-          docker push $ACR_LOGIN_SERVER/backend:latest
-          docker push $ACR_LOGIN_SERVER/frontend:latest
+          docker push $ACR_LOGIN_SERVER/globalexplorer-backend:latest
+          docker push $ACR_LOGIN_SERVER/globalexplorer-frontend:latest
 
-      # 8️⃣ Deploy using Azure Container Apps Compose
+      # 8️⃣ Deploy to Azure Container Apps (Compose)
       - name: Deploy to Azure Container Apps
         run: |
           echo "Deploying to Azure Container Apps..."
@@ -110,4 +104,5 @@ jobs:
             --compose-file-path docker-compose.prod.yml \
             --registry-server $ACR_LOGIN_SERVER \
             --registry-username ${{ secrets.ACR_USERNAME }} \
-            --registry-password ${{ secrets.ACR_PASSWORD }}
+            --registry-password ${{ secrets.ACR_PASSWORD }} \
+            --location $LOCATION
