@@ -25,7 +25,7 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Log in to ACR
-        run: az acr login --name ${{ secrets.ACR }}
+        run: az acr login --name ${{ secrets.ACR_USERNAME }}
 
       - name: Generate frontend .env.build file
         run: |
@@ -50,6 +50,6 @@ jobs:
             --resource-group $RESOURCE_GROUP \
             --environment $ENV_NAME \
             --compose-file-path docker-compose.prod.yml \
-            --registry-server ${{ secrets.ACR }} \
+            --registry-server ${{ secrets.ACR_LOGIN_SERVER }} \
             --registry-username ${{ secrets.ACR_USERNAME }} \
             --registry-password ${{ secrets.ACR_PASSWORD }}
