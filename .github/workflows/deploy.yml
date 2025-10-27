@@ -86,7 +86,6 @@ jobs:
           docker compose -f docker-compose.prod.yml --env-file .env.build build
 
       # 7️⃣ Tag & Push to ACR
-        # after building, tag & push images to your ACR
       - name: Tag and Push images to ACR
         run: |
           echo "Tagging and pushing images to ACR..."
@@ -95,6 +94,12 @@ jobs:
 
           docker push $ACR_LOGIN_SERVER/globalexplorer-backend:latest
           docker push $ACR_LOGIN_SERVER/globalexplorer-frontend:latest
+
+      # ⬇️ ADD THIS NEW STEP ⬇️
+      - name: Replace registry placeholder in deploy file
+        run: |
+          echo "Replacing ACR_LOGIN_SERVER with $ACR_LOGIN_SERVER"
+          sed -i "s|ACR_LOGIN_SERVER|$ACR_LOGIN_SERVER|g" docker-compose.deploy.yml
 
       # 8️⃣ Deploy to Azure Container Apps (Compose)
       - name: Deploy to Azure Container Apps

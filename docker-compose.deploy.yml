@@ -6,10 +6,8 @@ services:
     restart: always
 
   backend:
-    image: globalexplorer-backend:latest  # <-- Specifies the image to pull
-    # NO 'build:' SECTION
+    image: ACR_LOGIN_SERVER/globalexplorer-backend:latest  # <-- CHANGED
     container_name: backend
-    # 'env_file' is removed as Azure will not read it.
     depends_on:
       - redis
     environment:
@@ -19,8 +17,7 @@ services:
       - "3000:3000"
 
   frontend:
-    image: globalexplorer-frontend:latest # <-- Specifies the image to pull
-    # NO 'build:' SECTION
+    image: ACR_LOGIN_SERVER/globalexplorer-frontend:latest # <-- CHANGED
     container_name: frontend
     depends_on:
       - backend
