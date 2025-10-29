@@ -191,3 +191,33 @@ jobs:
             --type internal \
             --target-port 6379 \
             --transport auto
+
+      # 1️⃣1️⃣ Enable Internal Ingress for Redis
+      - name: Enable internal ingress for redis
+        run: |
+          echo "Applying internal ingress to redis..."
+          az containerapp ingress enable \
+            --name redis \
+            --resource-group $RESOURCE_GROUP \
+            --type internal \
+            --target-port 6379 \
+            --transport auto
+
+      # 1️⃣2️⃣ Get Redis internal FQDN and update backend environment variable
+      - name: Update backend with Redis internal FQDN
+        run: |
+          echo "Fetching Redis internal FQDN..."
+          REDIS_FQDN=$(az containerapp show \
+            --name redis \
+            --resource-group $RESOURCE_GROUP \
+            --query "properties.configuration.ingress.fqdn" \
+            -o tsv)
+
+          echo "Redis internal FQDN: $REDIS_FQDN"
+
+          echo "Updating backend environment variable to use internal Redis FQDN..."
+          az containerapp update \
+            --name backend \
+            --resource-group $RESOURCE_GROUP \
+            --set-env-vars REDIS_HOST=$REDIS_FQDN
+
