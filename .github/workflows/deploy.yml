@@ -1,115 +1,194 @@
 name: Deploy to Azure Container Apps (Compose)
 
 on:
-  push:
-    branches:
-      - main
+push:
+branches:
+- main
 
 env:
-  RESOURCE_GROUP: ${{ secrets.ACR_RESOURCE_GROUP }}
-  ENV_NAME: ${{ secrets.CONTAINERAPPS_ENV }}
-  LOCATION: ${{ secrets.LOCATION }}
-  ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
-  ACR_NAME: ${{ secrets.ACR_USERNAME }}
 
-jobs:
-  build-and-deploy:
-    runs-on: ubuntu-latest
+These are read from GitHub Secrets
 
-    steps:
-      # 1️⃣ Checkout the repository
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          submodules: 'recursive'
+RESOURCE_GROUP: ${{ secrets.ACR_RESOURCE_GROUP }}
+ENV_NAME: ${{ secrets.CONTAINERAPPS_ENV }}
+LOCATION: ${{ secrets.LOCATION }}
+ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
+ACR_NAME: ${{ secrets.ACR_USERNAME }}
 
-      # 2️⃣ Log in to Azure
-      - name: Log in to Azure
-        uses: azure/login@v2
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+jobs: build-and-deploy: runs-on: ubuntu-latest
 
-      # 3️⃣ Log in to Azure Container Registry (ACR)
-      - name: Log in to ACR
-        run: az acr login --name $ACR_NAME
+steps:
+  # 1️⃣ Checkout the repository (including submodules)
+  - name: Checkout code
+    uses: actions/checkout@v4
+    with:
+      submodules: 'recursive'
 
-      # 4️⃣ Generate frontend .env.build
-      - name: Generate frontend .env.build
-        run: |
-          echo "Generating frontend .env.build..."
-          cat <<EOF > .env.build
-          VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }}
-          VITE_BASE_URL=${{ secrets.VITE_BASE_URL }}
-          VITE_MAP_API=${{ secrets.VITE_MAP_API }}
-          VITE_IMG_URL=${{ secrets.VITE_IMG_URL }}
-          VITE_RAZORPAY_KEY_ID=${{ secrets.VITE_RAZORPAY_KEY_ID }}
-          VITE_GET_GEOLOCATION=${{ secrets.VITE_GET_GEOLOCATION }}
-          EOF
+  # 2️⃣ Log in to Azure
+  - name: Log in to Azure
+    uses: azure/login@v2
+    with:
+      creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      # 5️⃣ Create backend/.env with all sensitive backend secrets
-      - name: Create backend .env file
-        run: |
-          echo "Creating backend/.env..."
-          mkdir -p backend
-          cat <<EOF > backend/.env
-          ALLOWED_ORIGIN=${{ secrets.ALLOWED_ORIGIN }}
-          FRONT_END_URL=${{ secrets.FRONT_END_URL }}
-          NODE_ENV=${{ secrets.NODE_ENV }}
-          MONGODB_URI=${{ secrets.MONGODB_URI }}
-          SESSION_SECRET=${{ secrets.SESSION_SECRET }}
-          GMAIL_PASSWORD=${{ secrets.GMAIL_PASSWORD }}
-          GMAIL_ID=${{ secrets.GMAIL_ID }}
-          ACCESS_TOKEN_SECRET=${{ secrets.ACCESS_TOKEN_SECRET }}
-          REFRESH_TOKEN_SECRET=${{ secrets.REFRESH_TOKEN_SECRET }}
-          RESET_TOKEN_SECRET=${{ secrets.RESET_TOKEN_SECRET }}
-          GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
-          GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
-          GOOGLE_CALLBACK_URL=${{ secrets.GOOGLE_CALLBACK_URL }}
-          REDIS_USERNAME=${{ secrets.REDIS_USERNAME }}
-          REDIS_PASS=${{ secrets.REDIS_PASS }}
-          REDIS_HOST=redis
-          REDIS_PORT=${{ secrets.REDIS_PORT }}
-          REDIS_URL=${{ secrets.REDIS_URL }}
-          RAZORPAY_KEY_ID=${{ secrets.RAZORPAY_KEY_ID }}
-          RAZORPAY_KEY_SECRET=${{ secrets.RAZORPAY_KEY_SECRET }}
-          RAZORPAY_KEY=${{ secrets.RAZORPAY_KEY }}
-          CLOUDINARY_URL=${{ secrets.CLOUDINARY_URL }}
-          CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY }}
-          CLOUDINARY_SECRET=${{ secrets.CLOUDINARY_SECRET }}
-          CLOUDINARY_CLOUD_NAME=${{ secrets.CLOUDINARY_CLOUD_NAME }}
-          EOF
+  # 3️⃣ Log in to Azure Container Registry (ACR)
+  - name: Log in to ACR
+    run: az acr login --name $ACR_NAME
 
-      # 6️⃣ Build and tag images using docker compose
-      - name: Build Docker images using Compose
-        run: |
-          echo "Building Docker images using docker-compose.prod.yml..."
-          docker compose -f docker-compose.prod.yml --env-file .env.build build
+  # 4️⃣ Generate frontend .env.build (for build time)
+  - name: Generate frontend .env.build
+    run: |
+      echo "Generating frontend .env.build..."
+      cat <<EOF > .env.build
+      VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }}
+      VITE_BASE_URL=${{ secrets.VITE_BASE_URL }}
+      VITE_MAP_API=${{ secrets.VITE_MAP_API }}
+      VITE_IMG_URL=${{ secrets.VITE_IMG_URL }}
+      VITE_RAZORPAY_KEY_ID=${{ secrets.VITE_RAZORPAY_KEY_ID }}
+      VITE_GET_GEOLOCATION=${{ secrets.VITE_GET_GEOLOCATION }}
+      EOF
 
-      # 7️⃣ Tag & Push to ACR
-      - name: Tag and Push images to ACR
-        run: |
-          echo "Tagging and pushing images to ACR..."
-          docker tag globalexplorer-backend:latest $ACR_LOGIN_SERVER/globalexplorer-backend:latest
-          docker tag globalexplorer-frontend:latest $ACR_LOGIN_SERVER/globalexplorer-frontend:latest
+  # 5️⃣ Create backend/.env (for build time only)
+  - name: Create backend .env file
+    run: |
+      echo "Creating backend/.env..."
+      # Ensure backend directory exists (important if submodule checkout was shallow initially)
+      mkdir -p backend
+      cat <<EOF > backend/.env
+      ALLOWED_ORIGIN=${{ secrets.ALLOWED_ORIGIN }}
+      FRONT_END_URL=${{ secrets.FRONT_END_URL }}
+      NODE_ENV=${{ secrets.NODE_ENV }}
+      MONGODB_URI=${{ secrets.MONGODB_URI }}
+      SESSION_SECRET=${{ secrets.SESSION_SECRET }}
+      GMAIL_PASSWORD=${{ secrets.GMAIL_PASSWORD }}
+      GMAIL_ID=${{ secrets.GMAIL_ID }}
+      ACCESS_TOKEN_SECRET=${{ secrets.ACCESS_TOKEN_SECRET }}
+      REFRESH_TOKEN_SECRET=${{ secrets.REFRESH_TOKEN_SECRET }}
+      RESET_TOKEN_SECRET=${{ secrets.RESET_TOKEN_SECRET }}
+      GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+      GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+      GOOGLE_CALLBACK_URL=${{ secrets.GOOGLE_CALLBACK_URL }}
+      REDIS_USERNAME=${{ secrets.REDIS_USERNAME }}
+      REDIS_PASS=${{ secrets.REDIS_PASS }}
+      REDIS_HOST=redis # This is only for build time if needed, runtime uses the mapping below
+      REDIS_PORT=${{ secrets.REDIS_PORT }}
+      REDIS_URL=${{ secrets.REDIS_URL }}
+      RAZORPAY_KEY_ID=${{ secrets.RAZORPAY_KEY_ID }}
+      RAZORPAY_KEY_SECRET=${{ secrets.RAZORPAY_KEY_SECRET }}
+      RAZORPAY_KEY=${{ secrets.RAZORPAY_KEY }}
+      CLOUDINARY_URL=${{ secrets.CLOUDINARY_URL }}
+      CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY }}
+      CLOUDINARY_SECRET=${{ secrets.CLOUDINARY_SECRET }}
+      CLOUDINARY_CLOUD_NAME=${{ secrets.CLOUDINARY_CLOUD_NAME }}
+      EOF
 
-          docker push $ACR_LOGIN_SERVER/globalexplorer-backend:latest
-          docker push $ACR_LOGIN_SERVER/globalexplorer-frontend:latest
+  # 6️⃣ Build Docker images using Compose
+  - name: Build Docker images using Compose
+    run: |
+      echo "Building Docker images using docker-compose.prod.yml..."
+      # Make sure docker-compose.prod.yml has the image: tags added
+      docker compose -f docker-compose.prod.yml --env-file .env.build build
 
-      # ⬇️ ADD THIS NEW STEP ⬇️
-      - name: Replace registry placeholder in deploy file
-        run: |
-          echo "Replacing ACR_LOGIN_SERVER with $ACR_LOGIN_SERVER"
-          sed -i "s|ACR_LOGIN_SERVER|$ACR_LOGIN_SERVER|g" docker-compose.deploy.yml
+  # 7️⃣ Tag & Push images to ACR
+  - name: Tag and Push images to ACR
+    run: |
+      echo "Tagging and pushing images to ACR..."
+      # Ensure the image names here match those in docker-compose.prod.yml
+      docker tag globalexplorer-backend:latest $ACR_LOGIN_SERVER/globalexplorer-backend:latest
+      docker tag globalexplorer-frontend:latest $ACR_LOGIN_SERVER/globalexplorer-frontend:latest
 
-      # 8️⃣ Deploy to Azure Container Apps (Compose)
-      - name: Deploy to Azure Container Apps
-        run: |
-          echo "Deploying to Azure Container Apps..."
-          az containerapp compose create \
-            --resource-group $RESOURCE_GROUP \
-            --environment $ENV_NAME \
-            --compose-file-path docker-compose.deploy.yml \
-            --registry-server $ACR_LOGIN_SERVER \
-            --registry-username ${{ secrets.ACR_USERNAME }} \
-            --registry-password ${{ secrets.ACR_PASSWORD }} \
-            --location $LOCATION
+      docker push $ACR_LOGIN_SERVER/globalexplorer-backend:latest
+      docker push $ACR_LOGIN_SERVER/globalexplorer-frontend:latest
+
+  # 8️⃣ Replace registry placeholder in the deploy file
+  - name: Replace registry placeholder in deploy file
+    run: |
+      echo "Replacing ACR_LOGIN_SERVER with $ACR_LOGIN_SERVER in deploy file"
+      # Ensure docker-compose.deploy.yml exists and has the placeholder
+      sed -i "s|ACR_LOGIN_SERVER|$ACR_LOGIN_SERVER|g" docker-compose.deploy.yml
+
+  # 9️⃣ Deploy base structure using Compose
+  # This step creates/updates the apps but wipes previous env var mappings
+  - name: Deploy base structure to Azure Container Apps
+    run: |
+      echo "Deploying base structure using docker-compose.deploy.yml..."
+      az containerapp compose create \
+        --resource-group $RESOURCE_GROUP \
+        --environment $ENV_NAME \
+        --compose-file-path docker-compose.deploy.yml \
+        --registry-server $ACR_LOGIN_SERVER \
+        --registry-username ${{ secrets.ACR_USERNAME }} \
+        --registry-password ${{ secrets.ACR_PASSWORD }} \
+        --location $LOCATION
+
+  # 1️⃣0️⃣ Create/Update Secrets AND Map Environment Variables for Backend
+  # This step ensures secrets exist in ACA and maps them for runtime
+  - name: Set secrets and map environment variables for backend app
+    run: |
+      echo "Setting/Updating secrets in Azure for backend..."
+      az containerapp secret set --name backend --resource-group $RESOURCE_GROUP \
+        --secrets \
+          "razorpay-key-id=${{ secrets.RAZORPAY_KEY_ID }}" \
+          "razorpay-key-secret=${{ secrets.RAZORPAY_KEY_SECRET }}" \
+          "mongodb-uri=${{ secrets.MONGODB_URI }}" \
+          "session-secret=${{ secrets.SESSION_SECRET }}" \
+          "gmail-password=${{ secrets.GMAIL_PASSWORD }}" \
+          "gmail-id=${{ secrets.GMAIL_ID }}" \
+          "access-token-secret=${{ secrets.ACCESS_TOKEN_SECRET }}" \
+          "refresh-token-secret=${{ secrets.REFRESH_TOKEN_SECRET }}" \
+          "reset-token-secret=${{ secrets.RESET_TOKEN_SECRET }}" \
+          "google-client-id=${{ secrets.GOOGLE_CLIENT_ID }}" \
+          "google-client-secret=${{ secrets.GOOGLE_CLIENT_SECRET }}" \
+          "google-callback-url=${{ secrets.GOOGLE_CALLBACK_URL }}" \
+          "redis-username=${{ secrets.REDIS_USERNAME }}" \
+          "redis-pass=${{ secrets.REDIS_PASS }}" \
+          "redis-port=${{ secrets.REDIS_PORT }}" \
+          "redis-url=${{ secrets.REDIS_URL }}" \
+          "razorpay-key=${{ secrets.RAZORPAY_KEY }}" \
+          "cloudinary-url=${{ secrets.CLOUDINARY_URL }}" \
+          "cloudinary-api-key=${{ secrets.CLOUDINARY_API_KEY }}" \
+          "cloudinary-secret=${{ secrets.CLOUDINARY_SECRET }}" \
+          "cloudinary-cloud-name=${{ secrets.CLOUDINARY_CLOUD_NAME }}" \
+          "allowed-origin=${{ secrets.ALLOWED_ORIGIN }}" \
+          "front-end-url=${{ secrets.FRONT_END_URL }}" \
+          "node-env=${{ secrets.NODE_ENV }}"
+
+      echo "Applying environment variable mappings to backend..."
+      az containerapp update -n backend -g $RESOURCE_GROUP \
+        --set-env-vars \
+          "REDIS_HOST=redis" \
+          "RAZORPAY_KEY_ID=secretref:razorpay-key-id" \
+          "RAZORPAY_KEY_SECRET=secretref:razorpay-key-secret" \
+          "MONGODB_URI=secretref:mongodb-uri" \
+          "SESSION_SECRET=secretref:session-secret" \
+          "GMAIL_PASSWORD=secretref:gmail-password" \
+          "GMAIL_ID=secretref:gmail-id" \
+          "ACCESS_TOKEN_SECRET=secretref:access-token-secret" \
+          "REFRESH_TOKEN_SECRET=secretref:refresh-token-secret" \
+          "RESET_TOKEN_SECRET=secretref:reset-token-secret" \
+          "GOOGLE_CLIENT_ID=secretref:google-client-id" \
+          "GOOGLE_CLIENT_SECRET=secretref:google-client-secret" \
+          "GOOGLE_CALLBACK_URL=secretref:google-callback-url" \
+          "REDIS_USERNAME=secretref:redis-username" \
+          "REDIS_PASS=secretref:redis-pass" \
+          "REDIS_PORT=secretref:redis-port" \
+          "REDIS_URL=secretref:redis-url" \
+          "RAZORPAY_KEY=secretref:razorpay-key" \
+          "CLOUDINARY_URL=secretref:cloudinary-url" \
+          "CLOUDINARY_API_KEY=secretref:cloudinary-api-key" \
+          "CLOUDINARY_SECRET=secretref:cloudinary-secret" \
+          "CLOUDINARY_CLOUD_NAME=secretref:cloudinary-cloud-name" \
+          "ALLOWED_ORIGIN=secretref:allowed-origin" \
+          "FRONT_END_URL=secretref:front-end-url" \
+          "NODE_ENV=secretref:node-env"
+
+  # 1️⃣1️⃣ Enable Internal Ingress for Redis
+  # This step ensures redis is reachable internally after compose create might reset it
+  - name: Enable internal ingress for redis
+    run: |
+      echo "Applying internal ingress to redis..."
+      az containerapp ingress enable \
+        --name redis \
+        --resource-group $RESOURCE_GROUP \
+        --type internal \
+        --target-port 6379 \
+        --transport auto
