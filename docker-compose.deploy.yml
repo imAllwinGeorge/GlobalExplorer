@@ -1,12 +1,19 @@
-# docker-compose.deploy.yml
 services:
   redis:
-    image: redis:latest
+    image: redis:7-alpine
     container_name: redis
     restart: always
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   backend:
-    image: ACR_LOGIN_SERVER/globalexplorer-backend:latest  # <-- CHANGED
+    image: ACR_LOGIN_SERVER/globalexplorer-backend:latest
     container_name: backend
     depends_on:
       - redis
@@ -17,7 +24,7 @@ services:
       - "3000:3000"
 
   frontend:
-    image: ACR_LOGIN_SERVER/globalexplorer-frontend:latest # <-- CHANGED
+    image: ACR_LOGIN_SERVER/globalexplorer-frontend:latest
     container_name: frontend
     depends_on:
       - backend
