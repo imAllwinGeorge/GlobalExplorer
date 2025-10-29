@@ -3,14 +3,9 @@ services:
     image: redis:7-alpine
     container_name: redis
     restart: always
-    ports:
-      - "6379:6379"
-    command: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+    # NOTE: All 'ports', 'command', and 'healthcheck' keys have been REMOVED.
+    # Step 11 in your GitHub Action correctly handles the internal ingress.
+    # The default Redis command will be used, which runs it as an in-memory cache.
 
   backend:
     image: ACR_LOGIN_SERVER/globalexplorer-backend:latest
@@ -18,6 +13,7 @@ services:
     depends_on:
       - redis
     environment:
+      # This is just a placeholder; the real host is set in Step 12
       - REDIS_HOST=redis
     restart: always
     ports:
