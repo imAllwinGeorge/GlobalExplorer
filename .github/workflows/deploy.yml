@@ -154,7 +154,7 @@ jobs:
           echo "Applying environment variable mappings to backend..."
           az containerapp update -n backend -g $RESOURCE_GROUP \
             --set-env-vars \
-              "REDIS_HOST=redis" \
+              "REDIS_HOST=redis.internal.whitebay-7e7cc02c.centralindia.azurecontainerapps.io" \
               "RAZORPAY_KEY_ID=secretref:razorpay-key-id" \
               "RAZORPAY_KEY_SECRET=secretref:razorpay-key-secret" \
               "MONGODB_URI=secretref:mongodb-uri" \
