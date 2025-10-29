@@ -68,7 +68,7 @@ jobs:
           GOOGLE_CALLBACK_URL=${{ secrets.GOOGLE_CALLBACK_URL }}
           REDIS_USERNAME=${{ secrets.REDIS_USERNAME }}
           REDIS_PASS=${{ secrets.REDIS_PASS }}
-          REDIS_HOST=redis # This is only for build time if needed, runtime uses the mapping below
+          REDIS_HOST=${{ secrets.REDIS_HOST }}
           REDIS_PORT=${{ secrets.REDIS_PORT }}
           REDIS_URL=${{ secrets.REDIS_URL }}
           RAZORPAY_KEY_ID=${{ secrets.RAZORPAY_KEY_ID }}
