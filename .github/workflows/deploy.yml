@@ -119,9 +119,8 @@ jobs:
             --registry-password ${{ secrets.ACR_PASSWORD }} \
             --location $LOCATION
 
-      # 1️⃣0️⃣ Create/Update Secrets AND Map Environment Variables for Backend
-      # This step ensures secrets exist in ACA and maps them for runtime
-      - name: Set secrets and map environment variables for backend app
+     # 1️⃣0️⃣ Create/Update Secrets for Backend
+      - name: Set secrets for backend app
         run: |
           echo "Setting/Updating secrets in Azure for backend..."
           az containerapp secret set --name backend --resource-group $RESOURCE_GROUP \
@@ -151,10 +150,40 @@ jobs:
               "front-end-url=${{ secrets.FRONT_END_URL }}" \
               "node-env=${{ secrets.NODE_ENV }}"
 
-          echo "Applying environment variable mappings to backend..."
+      # 1️⃣1️⃣ Enable Internal Ingress for Redis
+      # This ensures redis is reachable internally by other apps in the environment
+      - name: Enable internal ingress for redis
+        run: |
+          echo "Applying internal ingress to redis..."
+          az containerapp ingress enable \
+            --name redis \
+            --resource-group $RESOURCE_GROUP \
+            --type internal \
+            --target-port 6379 \
+            --transport auto
+
+      # 1️⃣2️⃣ Get Redis FQDN and Map ALL backend environment variables
+      # This step fetches the dynamic FQDN for Redis and applies ALL env vars at once
+      - name: Get Redis FQDN and map backend environment variables
+        run: |
+          echo "Fetching Redis internal FQDN..."
+          REDIS_FQDN=$(az containerapp show \
+            --name redis \
+            --resource-group $RESOURCE_GROUP \
+            --query "properties.configuration.ingress.fqdn" \
+            -o tsv)
+
+          if [ -z "$REDIS_FQDN" ]; then
+            echo "::error::Failed to retrieve Redis FQDN."
+            exit 1
+          fi
+
+          echo "Redis internal FQDN: $REDIS_FQDN"
+          
+          echo "Applying ALL environment variable mappings to backend..."
           az containerapp update -n backend -g $RESOURCE_GROUP \
             --set-env-vars \
-              "REDIS_HOST=redis.internal.whitebay-7e7cc02c.centralindia.azurecontainerapps.io" \
+              "REDIS_HOST=$REDIS_FQDN" \
               "RAZORPAY_KEY_ID=secretref:razorpay-key-id" \
               "RAZORPAY_KEY_SECRET=secretref:razorpay-key-secret" \
               "MONGODB_URI=secretref:mongodb-uri" \
@@ -179,45 +208,4 @@ jobs:
               "ALLOWED_ORIGIN=secretref:allowed-origin" \
               "FRONT_END_URL=secretref:front-end-url" \
               "NODE_ENV=secretref:node-env"
-
-      # 1️⃣1️⃣ Enable Internal Ingress for Redis
-      # This step ensures redis is reachable internally after compose create might reset it
-      - name: Enable internal ingress for redis
-        run: |
-          echo "Applying internal ingress to redis..."
-          az containerapp ingress enable \
-            --name redis \
-            --resource-group $RESOURCE_GROUP \
-            --type internal \
-            --target-port 6379 \
-            --transport auto
-
-      # 1️⃣1️⃣ Enable Internal Ingress for Redis
-      - name: Enable internal ingress for redis
-        run: |
-          echo "Applying internal ingress to redis..."
-          az containerapp ingress enable \
-            --name redis \
-            --resource-group $RESOURCE_GROUP \
-            --type internal \
-            --target-port 6379 \
-            --transport auto
-
-      # 1️⃣2️⃣ Get Redis internal FQDN and update backend environment variable
-      - name: Update backend with Redis internal FQDN
-        run: |
-          echo "Fetching Redis internal FQDN..."
-          REDIS_FQDN=$(az containerapp show \
-            --name redis \
-            --resource-group $RESOURCE_GROUP \
-            --query "properties.configuration.ingress.fqdn" \
-            -o tsv)
-
-          echo "Redis internal FQDN: $REDIS_FQDN"
-
-          echo "Updating backend environment variable to use internal Redis FQDN..."
-          az containerapp update \
-            --name backend \
-            --resource-group $RESOURCE_GROUP \
-            --set-env-vars REDIS_HOST=$REDIS_FQDN
 
