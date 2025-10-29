@@ -3,9 +3,9 @@ services:
     image: redis:7-alpine
     container_name: redis
     restart: always
-    # NOTE: All 'ports', 'command', and 'healthcheck' keys have been REMOVED.
-    # Step 11 in your GitHub Action correctly handles the internal ingress.
-    # The default Redis command will be used, which runs it as an in-memory cache.
+    ports:
+      - "6379:6379"
+    # The 'command' and 'healthcheck' keys, which caused the crash, are removed.
 
   backend:
     image: ACR_LOGIN_SERVER/globalexplorer-backend:latest
@@ -13,7 +13,6 @@ services:
     depends_on:
       - redis
     environment:
-      # This is just a placeholder; the real host is set in Step 12
       - REDIS_HOST=redis
     restart: always
     ports:
