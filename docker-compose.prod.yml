@@ -1,8 +1,4 @@
 services:
-  redis:
-    image: redis:latest
-    container_name: redis
-    restart: always
 
   backend:
     image: globalexplorer-backend:latest
@@ -12,10 +8,6 @@ services:
     container_name: backend
     env_file:
       - ./backend/.env
-    depends_on:
-      - redis
-    environment:
-      - REDIS_HOST=redis
     restart: always
     ports:
       - "3000:3000"

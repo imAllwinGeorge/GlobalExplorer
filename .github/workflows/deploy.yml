@@ -119,8 +119,8 @@ jobs:
             --registry-password ${{ secrets.ACR_PASSWORD }} \
             --location $LOCATION
 
-     # 1️⃣0️⃣ Create/Update Secrets for Backend
-      - name: Set secrets for backend app
+    # 1️⃣0️⃣ Create/Update Secrets AND Map Environment Variables for Backend
+      - name: Set secrets and map environment variables for backend app
         run: |
           echo "Setting/Updating secrets in Azure for backend..."
           az containerapp secret set --name backend --resource-group $RESOURCE_GROUP \
@@ -141,6 +141,7 @@ jobs:
               "redis-pass=${{ secrets.REDIS_PASS }}" \
               "redis-port=${{ secrets.REDIS_PORT }}" \
               "redis-url=${{ secrets.REDIS_URL }}" \
+              "redis-host=${{ secrets.REDIS_HOST }}" \
               "razorpay-key=${{ secrets.RAZORPAY_KEY }}" \
               "cloudinary-url=${{ secrets.CLOUDINARY_URL }}" \
               "cloudinary-api-key=${{ secrets.CLOUDINARY_API_KEY }}" \
@@ -150,40 +151,14 @@ jobs:
               "front-end-url=${{ secrets.FRONT_END_URL }}" \
               "node-env=${{ secrets.NODE_ENV }}"
 
-      # 1️⃣1️⃣ Enable Internal Ingress for Redis
-      # This ensures redis is reachable internally by other apps in the environment
-      - name: Enable internal ingress for redis
-        run: |
-          echo "Applying internal ingress to redis..."
-          az containerapp ingress enable \
-            --name redis \
-            --resource-group $RESOURCE_GROUP \
-            --type internal \
-            --target-port 6379 \
-            --transport auto
-
-      # 1️⃣2️⃣ Get Redis FQDN and Map ALL backend environment variables
-      # This step fetches the dynamic FQDN for Redis and applies ALL env vars at once
-      - name: Get Redis FQDN and map backend environment variables
-        run: |
-          echo "Fetching Redis internal FQDN..."
-          REDIS_FQDN=$(az containerapp show \
-            --name redis \
-            --resource-group $RESOURCE_GROUP \
-            --query "properties.configuration.ingress.fqdn" \
-            -o tsv)
-
-          if [ -z "$REDIS_FQDN" ]; then
-            echo "::error::Failed to retrieve Redis FQDN."
-            exit 1
-          fi
-
-          echo "Redis internal FQDN: $REDIS_FQDN"
-          
           echo "Applying ALL environment variable mappings to backend..."
           az containerapp update -n backend -g $RESOURCE_GROUP \
             --set-env-vars \
-              "REDIS_HOST=$REDIS_FQDN" \
+              "REDIS_HOST=secretref:redis-host" \
+              "REDIS_PASS=secretref:redis-pass" \
+              "REDIS_PORT=secretref:redis-port" \
+              "REDIS_USERNAME=secretref:redis-username" \
+              "REDIS_URL=secretref:redis-url" \
               "RAZORPAY_KEY_ID=secretref:razorpay-key-id" \
               "RAZORPAY_KEY_SECRET=secretref:razorpay-key-secret" \
               "MONGODB_URI=secretref:mongodb-uri" \
@@ -196,10 +171,6 @@ jobs:
               "GOOGLE_CLIENT_ID=secretref:google-client-id" \
               "GOOGLE_CLIENT_SECRET=secretref:google-client-secret" \
               "GOOGLE_CALLBACK_URL=secretref:google-callback-url" \
-              "REDIS_USERNAME=secretref:redis-username" \
-              "REDIS_PASS=secretref:redis-pass" \
-              "REDIS_PORT=secretref:redis-port" \
-              "REDIS_URL=secretref:redis-url" \
               "RAZORPAY_KEY=secretref:razorpay-key" \
               "CLOUDINARY_URL=secretref:cloudinary-url" \
               "CLOUDINARY_API_KEY=secretref:cloudinary-api-key" \
@@ -209,3 +180,4 @@ jobs:
               "FRONT_END_URL=secretref:front-end-url" \
               "NODE_ENV=secretref:node-env"
 
+      # Step 11 and Step 12 are now GONE.

@@ -1,19 +1,8 @@
 services:
-  redis:
-    image: redis:7-alpine
-    container_name: redis
-    restart: always
-    ports:
-      - "6379:6379"
-    # The 'command' and 'healthcheck' keys, which caused the crash, are removed.
 
   backend:
     image: ACR_LOGIN_SERVER/globalexplorer-backend:latest
     container_name: backend
-    depends_on:
-      - redis
-    environment:
-      - REDIS_HOST=redis
     restart: always
     ports:
       - "3000:3000"
