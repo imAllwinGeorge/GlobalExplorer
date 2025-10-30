@@ -180,4 +180,13 @@ jobs:
               "FRONT_END_URL=secretref:front-end-url" \
               "NODE_ENV=secretref:node-env"
 
-      # Step 11 and Step 12 are now GONE.
+      - name: Update frontend BACKEND_URL
+        run: |
+          echo "Fetching backend URL..."
+          BACKEND_URL=$(az containerapp show -n backend -g $RESOURCE_GROUP --query properties.configuration.ingress.fqdn -o tsv)
+          echo "Backend URL is $BACKEND_URL"
+          
+          az containerapp update \
+            -n frontend \
+            -g $RESOURCE_GROUP \
+            --set-env-vars BACKEND_URL=https://$BACKEND_URL
