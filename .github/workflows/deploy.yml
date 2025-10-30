@@ -117,7 +117,8 @@ jobs:
             --registry-server $ACR_LOGIN_SERVER \
             --registry-username ${{ secrets.ACR_USERNAME }} \
             --registry-password ${{ secrets.ACR_PASSWORD }} \
-            --location $LOCATION
+            --location $LOCATION \
+            --no-environment-create
 
     # 1️⃣0️⃣ Create/Update Secrets AND Map Environment Variables for Backend
       - name: Set secrets and map environment variables for backend app
