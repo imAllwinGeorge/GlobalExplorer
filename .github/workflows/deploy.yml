@@ -17,11 +17,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout the repository (including submodules)
+      # 1️⃣ Checkout repository (with submodules)
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-         submodules: 'recursive'
+          submodules: 'recursive'
 
       # 2️⃣ Log in to Azure
       - name: Log in to Azure
@@ -33,7 +33,7 @@ jobs:
       - name: Log in to ACR
         run: az acr login --name $ACR_NAME
 
-      # 4️⃣ Generate frontend .env.build (for build time)
+      # 4️⃣ Generate .env.build file for frontend
       - name: Generate frontend .env.build
         run: |
           echo "Generating frontend .env.build..."
@@ -44,13 +44,13 @@ jobs:
           VITE_IMG_URL=${{ secrets.VITE_IMG_URL }}
           VITE_RAZORPAY_KEY_ID=${{ secrets.VITE_RAZORPAY_KEY_ID }}
           VITE_GET_GEOLOCATION=${{ secrets.VITE_GET_GEOLOCATION }}
+          VITE_RAZORPAY_CHECKOUT_URL=${{ secrets.VITE_RAZORPAY_CHECKOUT_URL }}
           EOF
 
-      # 5️⃣ Create backend/.env (for build time only)
+      # 5️⃣ Create backend .env file (for build and runtime)
       - name: Create backend .env file
         run: |
           echo "Creating backend/.env..."
-          # Ensure backend directory exists (important if submodule checkout was shallow initially)
           mkdir -p backend
           cat <<EOF > backend/.env
           ALLOWED_ORIGIN=${{ secrets.ALLOWED_ORIGIN }}
@@ -80,33 +80,44 @@ jobs:
           CLOUDINARY_CLOUD_NAME=${{ secrets.CLOUDINARY_CLOUD_NAME }}
           EOF
 
-      # 6️⃣ Build Docker images using Compose
-      - name: Build Docker images using Compose
+      # 6️⃣ Build backend Docker image
+      - name: Build backend image
         run: |
-          echo "Building Docker images using docker-compose.prod.yml..."
-          # Make sure docker-compose.prod.yml has the image: tags added
-          docker compose -f docker-compose.prod.yml --env-file .env.build build
+          echo "Building backend image..."
+          docker build -t globalexplorer-backend:latest -f backend/Dockerfile backend
 
-      # 7️⃣ Tag & Push images to ACR
+      # 7️⃣ Build frontend Docker image with build args (important)
+      - name: Build frontend image
+        run: |
+          echo "Building frontend image with build args..."
+          docker build \
+            -t globalexplorer-frontend:latest \
+            --build-arg VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }} \
+            --build-arg VITE_BASE_URL=${{ secrets.VITE_BASE_URL }} \
+            --build-arg VITE_MAP_API=${{ secrets.VITE_MAP_API }} \
+            --build-arg VITE_IMG_URL=${{ secrets.VITE_IMG_URL }} \
+            --build-arg VITE_RAZORPAY_KEY_ID=${{ secrets.VITE_RAZORPAY_KEY_ID }} \
+            --build-arg VITE_GET_GEOLOCATION=${{ secrets.VITE_GET_GEOLOCATION }} \
+            --build-arg VITE_RAZORPAY_CHECKOUT_URL=${{ secrets.VITE_RAZORPAY_CHECKOUT_URL }} \
+            -f frontend/Dockerfile frontend
+
+      # 8️⃣ Tag & Push images to ACR
       - name: Tag and Push images to ACR
         run: |
           echo "Tagging and pushing images to ACR..."
-          # Ensure the image names here match those in docker-compose.prod.yml
           docker tag globalexplorer-backend:latest $ACR_LOGIN_SERVER/globalexplorer-backend:latest
           docker tag globalexplorer-frontend:latest $ACR_LOGIN_SERVER/globalexplorer-frontend:latest
 
           docker push $ACR_LOGIN_SERVER/globalexplorer-backend:latest
           docker push $ACR_LOGIN_SERVER/globalexplorer-frontend:latest
 
-      # 8️⃣ Replace registry placeholder in the deploy file
+      # 9️⃣ Replace registry placeholder in the deploy file
       - name: Replace registry placeholder in deploy file
         run: |
           echo "Replacing ACR_LOGIN_SERVER with $ACR_LOGIN_SERVER in deploy file"
-          # Ensure docker-compose.deploy.yml exists and has the placeholder
           sed -i "s|ACR_LOGIN_SERVER|$ACR_LOGIN_SERVER|g" docker-compose.deploy.yml
 
-      # 9️⃣ Deploy base structure using Compose
-      # This step creates/updates the apps but wipes previous env var mappings
+      # 🔟 Deploy base structure using Compose
       - name: Deploy base structure to Azure Container Apps
         run: |
           echo "Deploying base structure using docker-compose.deploy.yml..."
@@ -117,12 +128,12 @@ jobs:
             --registry-server $ACR_LOGIN_SERVER \
             --registry-username ${{ secrets.ACR_USERNAME }} \
             --registry-password ${{ secrets.ACR_PASSWORD }} \
-            --location $LOCATION \
+            --location $LOCATION
 
-    # 1️⃣0️⃣ Create/Update Secrets AND Map Environment Variables for Backend
-      - name: Set secrets and map environment variables for backend app
+      # 1️⃣1️⃣ Set backend secrets and environment variables
+      - name: Set backend secrets and environment variables
         run: |
-          echo "Setting/Updating secrets in Azure for backend..."
+          echo "Setting backend secrets and env vars..."
           az containerapp secret set --name backend --resource-group $RESOURCE_GROUP \
             --secrets \
               "razorpay-key-id=${{ secrets.RAZORPAY_KEY_ID }}" \
@@ -151,7 +162,6 @@ jobs:
               "front-end-url=${{ secrets.FRONT_END_URL }}" \
               "node-env=${{ secrets.NODE_ENV }}"
 
-          echo "Applying ALL environment variable mappings to backend..."
           az containerapp update -n backend -g $RESOURCE_GROUP \
             --set-env-vars \
               "REDIS_HOST=secretref:redis-host" \
@@ -180,12 +190,12 @@ jobs:
               "FRONT_END_URL=secretref:front-end-url" \
               "NODE_ENV=secretref:node-env"
 
+      # 1️⃣2️⃣ Update frontend BACKEND_URL for runtime
       - name: Update frontend BACKEND_URL
         run: |
           echo "Fetching backend URL..."
           BACKEND_URL=$(az containerapp show -n backend -g $RESOURCE_GROUP --query properties.configuration.ingress.fqdn -o tsv)
           echo "Backend URL is $BACKEND_URL"
-          
           az containerapp update \
             -n frontend \
             -g $RESOURCE_GROUP \
