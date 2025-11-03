@@ -200,3 +200,12 @@ jobs:
             -n frontend \
             -g $RESOURCE_GROUP \
             --set-env-vars BACKEND_URL=https://$BACKEND_URL
+      # 1️⃣3️⃣ Dynamically inject backend URL into frontend
+      - name: Inject Backend URL into Frontend
+        run: |
+          BACKEND_FQDN=$(az containerapp show -n backend -g $RESOURCE_GROUP --query properties.configuration.ingress.fqdn -o tsv)
+          echo "✅ Backend URL fetched: https://$BACKEND_FQDN"
+          az containerapp update \
+            -n frontend \
+            -g $RESOURCE_GROUP \
+            --set-env-vars VITE_API_BASE_URL=https://$BACKEND_FQDN
