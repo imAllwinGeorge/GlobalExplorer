@@ -12,6 +12,7 @@ services:
       - myredis
     networks:
       - globalexplorer-network
+    restart: unless-stopped
 
   frontend:
     build:
@@ -27,12 +28,15 @@ services:
     container_name: frontend
     env_file:
       - ./frontend/.env
+    environment:
+      - VITE_API_BASE_URL=http://backend:3000
     ports:
       - "80:80"
     depends_on:
       - backend
     networks:
       - globalexplorer-network
+    restart: unless-stopped
 
   myredis:
     image: redis:7
@@ -41,6 +45,7 @@ services:
       - "6379:6379"
     networks:
       - globalexplorer-network
+    restart: unless-stopped
 
 networks:
   globalexplorer-network:
