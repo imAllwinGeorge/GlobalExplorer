@@ -63,6 +63,7 @@ jobs:
           ACCESS_TOKEN_SECRET=${{ secrets.ACCESS_TOKEN_SECRET }}
           REFRESH_TOKEN_SECRET=${{ secrets.REFRESH_TOKEN_SECRET }}
           RESET_TOKEN_SECRET=${{ secrets.RESET_TOKEN_SECRET }}
+          QR_SECRET=${{ secrets.QR_SECRET }}
           GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
           GOOGLE_CALLBACK_URL=${{ secrets.GOOGLE_CALLBACK_URL }}
@@ -144,6 +145,7 @@ jobs:
               "gmail-id=${{ secrets.GMAIL_ID }}" \
               "access-token-secret=${{ secrets.ACCESS_TOKEN_SECRET }}" \
               "refresh-token-secret=${{ secrets.REFRESH_TOKEN_SECRET }}" \
+              "qr-secret=${{ secrets.QR_SECRET }}" \
               "reset-token-secret=${{ secrets.RESET_TOKEN_SECRET }}" \
               "google-client-id=${{ secrets.GOOGLE_CLIENT_ID }}" \
               "google-client-secret=${{ secrets.GOOGLE_CLIENT_SECRET }}" \
@@ -177,6 +179,7 @@ jobs:
               "GMAIL_ID=secretref:gmail-id" \
               "ACCESS_TOKEN_SECRET=secretref:access-token-secret" \
               "REFRESH_TOKEN_SECRET=secretref:refresh-token-secret" \
+              "QR_SECRET=secretref:qr-secret" \
               "RESET_TOKEN_SECRET=secretref:reset-token-secret" \
               "GOOGLE_CLIENT_ID=secretref:google-client-id" \
               "GOOGLE_CLIENT_SECRET=secretref:google-client-secret" \
