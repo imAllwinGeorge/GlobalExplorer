@@ -224,7 +224,7 @@ jobs:
               "vite-img-url=${{ secrets.VITE_IMG_URL }}" \
               "vite-razorpay-key-id=${{ secrets.VITE_RAZORPAY_KEY_ID }}" \
               "vite-get-geoloacation=${{ secrets.VITE_GET_GEOLOCATION }}" \
-              "vite-razorpay-checkout_url=${{ secrets.VITE_RAZORPAY_CHECKOUT_URL }}" \
+              "vite-razorpay-checkout-url=${{ secrets.VITE_RAZORPAY_CHECKOUT_URL }}" \
               "acr-resource-group=${{ secrets.ACR_RESOURCE_GROUP }}" \
               "containerapps-env=${{ secrets.CONTAINERAPPS_ENV }}" \
               "location=${{ secrets.LOCATION }}" \
