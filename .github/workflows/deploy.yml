@@ -46,6 +46,25 @@ jobs:
           VITE_GET_GEOLOCATION=${{ secrets.VITE_GET_GEOLOCATION }}
           VITE_RAZORPAY_CHECKOUT_URL=${{ secrets.VITE_RAZORPAY_CHECKOUT_URL }}
           EOF
+      # 4️⃣ Generate .env.build file for frontend
+      - name: Generate frontend .env.build
+        run: |
+          echo "Generating frontend .env..."
+          mkdir -p frontend
+          cat <<EOF > frontend/.env
+          VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }}
+          VITE_BASE_URL=${{ secrets.VITE_BASE_URL }}
+          VITE_MAP_API=${{ secrets.VITE_MAP_API }}
+          VITE_IMG_URL=${{ secrets.VITE_IMG_URL }}
+          VITE_RAZORPAY_KEY_ID=${{ secrets.VITE_RAZORPAY_KEY_ID }}
+          VITE_GET_GEOLOCATION=${{ secrets.VITE_GET_GEOLOCATION }}
+          VITE_RAZORPAY_CHECKOUT_URL=${{ secrets.VITE_RAZORPAY_CHECKOUT_URL }}
+          RESOURCE_GROUP=${{ secrets.ACR_RESOURCE_GROUP }}
+          ENV_NAME=${{ secrets.CONTAINERAPPS_ENV }}
+          LOCATION=${{ secrets.LOCATION }}
+          ACR_LOGIN_SERVER=${{ secrets.ACR_LOGIN_SERVER }}
+          ACR_NAME=${{ secrets.ACR_USERNAME }}
+          EOF
 
       # 5️⃣ Create backend .env file (for build and runtime)
       - name: Create backend .env file
