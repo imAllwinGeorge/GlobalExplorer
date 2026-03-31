@@ -218,35 +218,35 @@ jobs:
           echo "Setting frontend secrets and env vars..."
           az containerapp secret set --name frontend --resource-group $RESOURCE_GROUP \
             --secrets \
-              "vite-api-base-url"=${{ secrets.VITE_API_BASE_URL }}
-              "vite-base-url"=${{ secrets.VITE_BASE_URL }}
-              "vite-map-api"=${{ secrets.VITE_MAP_API }}
-              "vite-img-url"=${{ secrets.VITE_IMG_URL }}
-              "vite-razorpay-key-id"=${{ secrets.VITE_RAZORPAY_KEY_ID }}
-              "vite-get-geoloacation"=${{ secrets.VITE_GET_GEOLOCATION }}
-              "vite-razorpay-checkout_url"=${{ secrets.VITE_RAZORPAY_CHECKOUT_URL }}
-              "acr-resource-group"=${{ secrets.ACR_RESOURCE_GROUP }}
-              "containerapps-env"=${{ secrets.CONTAINERAPPS_ENV }}
-              "location"=${{ secrets.LOCATION }}
-              "acr-login-server"=${{ secrets.ACR_LOGIN_SERVER }}
-              "acr-username"=${{ secrets.ACR_USERNAME }}
-              "azure-credentials"=${{ secrets.azure_credentials }}
+              "vite-api-base-url=${{ secrets.VITE_API_BASE_URL }}" \
+              "vite-base-url=${{ secrets.VITE_BASE_URL }}" \
+              "vite-map-api=${{ secrets.VITE_MAP_API }}" \
+              "vite-img-url=${{ secrets.VITE_IMG_URL }}" \
+              "vite-razorpay-key-id=${{ secrets.VITE_RAZORPAY_KEY_ID }}" \
+              "vite-get-geoloacation=${{ secrets.VITE_GET_GEOLOCATION }}" \
+              "vite-razorpay-checkout_url=${{ secrets.VITE_RAZORPAY_CHECKOUT_URL }}" \
+              "acr-resource-group=${{ secrets.ACR_RESOURCE_GROUP }}" \
+              "containerapps-env=${{ secrets.CONTAINERAPPS_ENV }}" \
+              "location=${{ secrets.LOCATION }}" \
+              "acr-login-server=${{ secrets.ACR_LOGIN_SERVER }}" \
+              "acr-username=${{ secrets.ACR_USERNAME }}" \
+              "azure-credentials=${{ secrets.azure_credentials }}" 
 
           az containerapp update -n frontend -g $RESOURCE_GROUP \
             --set-env-vars \
-              "VITE_API_BASE_URL"=secretref:vite-api-base-url \
-              "VITE_BASE_URL"=secretref:vite-base-url \
-              "VITE_MAP_API"=secretref:vite-map-api \
-              "VITE_IMG_URL"=secretref:vite-img-url \
-              "VITE_RAZORPAY_KEY_ID"=secretref:vite-razorpay-key-id \
-              "VITE_GET_GEOLOCATION"=secretref:vite-get-geoloacation \
-              "VITE_RAZORPAY_CHECKOUT_URL"=secretref:vite-razorpay-checkout-url \
-              "ACR_RESOURCE_GROUP"=secretref:acr-resource-group \
-              "CONTAINERAPPS_ENV"=secretref:containerapps-env \
-              "LOCATION"=secretref:location \
-              "ACR_LOGIN_SERVER"=secretref:acr-login-server \
-              "ACR_NAME"=secretref:acr-username \
-              "AZURE_CREDENTIALS"=secretref:azure-credentials
+              "VITE_API_BASE_URL=secretref:vite-api-base-url" \
+              "VITE_BASE_URL=secretref:vite-base-url" \
+              "VITE_MAP_API=secretref:vite-map-api" \
+              "VITE_IMG_URL=secretref:vite-img-url" \
+              "VITE_RAZORPAY_KEY_ID=secretref:vite-razorpay-key-id" \
+              "VITE_GET_GEOLOCATION=secretref:vite-get-geoloacation" \
+              "VITE_RAZORPAY_CHECKOUT_URL=secretref:vite-razorpay-checkout-url" \
+              "ACR_RESOURCE_GROUP=secretref:acr-resource-group" \
+              "CONTAINERAPPS_ENV=secretref:containerapps-env" \
+              "LOCATION=secretref:location" \
+              "ACR_LOGIN_SERVER=secretref:acr-login-server" \
+              "ACR_NAME=secretref:acr-username" \
+              "AZURE_CREDENTIALS=secretref:azure-credentials"
 
       # 1️⃣2️⃣ Update frontend BACKEND_URL for runtime
       - name: Update frontend BACKEND_URL
