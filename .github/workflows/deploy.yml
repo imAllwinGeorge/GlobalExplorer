@@ -193,6 +193,42 @@ jobs:
               "FRONT_END_URL=secretref:front-end-url" \
               "NODE_ENV=secretref:node-env"
 
+      # 1️⃣1️⃣ Set frontend secrets and environment variables
+      - name: Set frontend secrets and environment variables
+        run: |
+          echo "Setting frontend secrets and env vars..."
+          az containerapp secret set --name frontend --resource-group $RESOURCE_GROUP \
+            --secrets \
+              "vite_api_base_url"=${{ secrets.VITE_API_BASE_URL }}
+              "vite_base_url"=${{ secrets.VITE_BASE_URL }}
+              "vite_map_api"=${{ secrets.VITE_MAP_API }}
+              "vite_img_url"=${{ secrets.VITE_IMG_URL }}
+              "vite_razorpay_key_id"=${{ secrets.VITE_RAZORPAY_KEY_ID }}
+              "vite_get_geoloacation"=${{ secrets.VITE_GET_GEOLOCATION }}
+              "vite_razorpay_checkout_url"=${{ secrets.VITE_RAZORPAY_CHECKOUT_URL }}
+              "acr_resource_group"=${{ secrets.ACR_RESOURCE_GROUP }}
+              "containerapps_env"=${{ secrets.CONTAINERAPPS_ENV }}
+              "location"=${{ secrets.LOCATION }}
+              "acr_login_server"=${{ secrets.ACR_LOGIN_SERVER }}
+              "acr_username"=${{ secrets.ACR_USERNAME }}
+              "azure_credentials"=${{ secrets.azure_credentials }}
+
+          az containerapp update -n frontend -g $RESOURCE_GROUP \
+            --set-env-vars \
+              "VITE_API_BASE_URL"=secretref:vite_api_base_url \
+              "VITE_BASE_URL"=secretref:vite_base_url \
+              "VITE_MAP_API"=secretref:vite_map_api \
+              "VITE_IMG_URL"=secretref:vite_img_url \
+              "VITE_RAZORPAY_KEY_ID"=secretref:vite_razorpay_key_id \
+              "VITE_GET_GEOLOCATION"=secretref:vite_get_geoloacation \
+              "VITE_RAZORPAY_CHECKOUT_URL"=secretref:vite_razorpay_checkout_url \
+              "ACR_RESOURCE_GROUP"=secretref:acr_resource_group \
+              "CONTAINERAPPS_ENV"=secretref:containerapps_env \
+              "LOCATION"=secretref:location \
+              "ACR_LOGIN_SERVER"=secretref:acr_login_server \
+              "ACR_NAME"=secretref:acr_username \
+              "AZURE_CREDENTIALS"=secretref:azure_credentials
+
       # 1️⃣2️⃣ Update frontend BACKEND_URL for runtime
       - name: Update frontend BACKEND_URL
         run: |
